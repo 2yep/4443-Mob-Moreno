@@ -6,6 +6,7 @@ import uvicorn
 import json
 from pymongo import MongoClient
 from bson import ObjectId
+
 # Builtin libraries
 import os
 
@@ -131,7 +132,7 @@ async def docs_redirect():
 @app.get("/candies")
 def list_all_candies():
     return list(collection.find({}, {"_id": 0}))
-    
+
     """
     Retrieve a list of all candies available in the store.
     """
@@ -141,11 +142,12 @@ def list_all_candies():
 def search_candies(
     query: str = Query(None, description="Query string to search candies")
 ):
-    return list(collection.find({"name": {"$regex": query, "$options": "i"}}, {"_id": 0}))
+    return list(
+        collection.find({"name": {"$regex": query, "$options": "i"}}, {"_id": 0})
+    )
     """
     Search for candies based on a query string (e.g., name, category, flavor).
     """
-    
 
 
 @app.get("/candies/{candy_id}")
@@ -156,25 +158,43 @@ def get_candy_details(
     """
     Get detailed information about a specific candy.
     """
-    
 
 
 @app.post("/candies")
 def add_new_candy():
-    return collection.insert_one({"id": 1, "name": "test", "category": "test", "flavor": "test", "price": 1, "quantity": 1})
+    return collection.insert_one(
+        {
+            "id": 1,
+            "name": "test",
+            "category": "test",
+            "flavor": "test",
+            "price": 1,
+            "quantity": 1,
+        }
+    )
     """
     Add a new candy to the store's inventory.
     """
-    
 
 
 @app.put("/candies/{candy_id}")
 def update_candy_info(candy_id: int):
-    return collection.update_one({"id": candy_id}, {"$set": {"name": "test", "category": "test", "flavor": "test", "price": 1, "quantity": 1}})
+    return collection.update_one(
+        {"id": candy_id},
+        {
+            "$set": {
+                "name": "test",
+                "category": "test",
+                "flavor": "test",
+                "price": 1,
+                "quantity": 1,
+            }
+        },
+    )
     """
     Update information about an existing candy.
     """
-    
+
 
 @app.delete("/candies/{candy_id}")
 def delete_candy(candy_id: int):
@@ -182,7 +202,6 @@ def delete_candy(candy_id: int):
     """
     Remove a candy from the store's inventory.
     """
-    
 
 
 @app.get("/categories")
@@ -191,7 +210,6 @@ def list_categories():
     """
     Get a list of candy categories (e.g., chocolates, gummies, hard candies).
     """
-    
 
 
 @app.get("/candies/{price}")
@@ -200,7 +218,6 @@ def candy_price():
     """
     Get candies by price range.
     """
-    
 
 
 @app.get("/store-info")
@@ -226,4 +243,6 @@ Note:
     The right side (app) is the bearingiable name of the FastApi instance declared at the top of the file.
 """
 if __name__ == "__main__":
-    uvicorn.run("api:app", host="mater.systems", port=8080, log_level="debug", reload=True)
+    uvicorn.run(
+        "api:app", host="mater.systems", port=8080, log_level="debug", reload=True
+    )

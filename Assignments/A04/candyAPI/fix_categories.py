@@ -1,6 +1,5 @@
 import glob
 import json
-from rich import print
 
 
 files = glob.glob("categoryJson/*.json")
@@ -18,5 +17,3 @@ for file in files:
     data["category_name"] = cat
     data["category_id"] = i
     i += 1
-
-    
