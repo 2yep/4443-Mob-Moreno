@@ -1,0 +1,5 @@
+pymongo
+rich
+uvicorn
+fastapi
+bson
