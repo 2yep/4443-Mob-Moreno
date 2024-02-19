@@ -1,16 +1,10 @@
-# Libraries for FastAPI
 from fastapi import FastAPI, Query, Path
 from fastapi.responses import RedirectResponse
-from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import json
 from pymongo import MongoClient
-from bson import ObjectId
 
 # Builtin libraries
-import os
 
-from random import shuffle
 
 """
            _____ _____   _____ _   _ ______ ____
@@ -154,10 +148,10 @@ def search_candies(
 def get_candy_details(
     candy_id: int = Path(..., description="The ID of the candy to retrieve")
 ):
-    return collection.find_one({"id": candy_id}, {"_id": 0})
     """
     Get detailed information about a specific candy.
     """
+    return collection.find_one({"id": candy_id}, {"_id": 0})
 
 
 @app.post("/candies")
@@ -225,7 +219,6 @@ def store_information():
     """
     Basic information about the candy store, including contact details.
     """
-    pass
 
 
 """
