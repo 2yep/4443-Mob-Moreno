@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Path, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
 import uvicorn
 from pymongo import MongoClient
