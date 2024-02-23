@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Query, Path
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Query, Path, HTTPException
+from fastapi.responses import RedirectResponse, FileResponse
 import uvicorn
 from pymongo import MongoClient
 
@@ -127,115 +127,108 @@ async def docs_redirect():
 def list_all_candies():
     return list(collection.find({}, {"_id": 0}))
 
-    """
-    Retrieve a list of all candies available in the store.
-    """
 
-
-@app.get("/candies/search")
-def search_candies(
-    query: str = Query(None, description="Query string to search candies")
-):
-    return list(
-        collection.find({"name": {"$regex": query, "$options": "i"}}, {"_id": 0})
-    )
-    """
-    Search for candies based on a query string (e.g., name, category, flavor).
-    """
-
-
-@app.get("/candies/{candy_id}")
-def get_candy_details(
-    candy_id: int = Path(..., description="The ID of the candy to retrieve")
-):
-    """
-    Get detailed information about a specific candy.
-    """
-    return collection.find_one({"id": candy_id}, {"_id": 0})
-
-
-@app.post("/candies")
-def add_new_candy():
-    return collection.insert_one(
-        {
-            "id": 1,
-            "name": "test",
-            "category": "test",
-            "flavor": "test",
-            "price": 1,
-            "quantity": 1,
-        }
-    )
-    """
-    Add a new candy to the store's inventory.
-    """
-
-
-@app.put("/candies/{candy_id}")
-def update_candy_info(candy_id: int):
-    return collection.update_one(
-        {"id": candy_id},
-        {
-            "$set": {
-                "name": "test",
-                "category": "test",
-                "flavor": "test",
-                "price": 1,
-                "quantity": 1,
-            }
-        },
-    )
-    """
-    Update information about an existing candy.
-    """
-
-
-@app.delete("/candies/{candy_id}")
-def delete_candy(candy_id: int):
-    return collection.delete_one({"id": candy_id})
-    """
-    Remove a candy from the store's inventory.
-    """
-
-
-@app.get("/categories")
-def list_categories():
+# get list of candy categories
+@app.get("/candies/categories")
+def list_all_candy_categories():
     return list(collection.distinct("category"))
-    """
-    Get a list of candy categories (e.g., chocolates, gummies, hard candies).
-    """
 
 
-@app.get("/candies/{price}")
-def candy_price():
-    return list(collection.find({"price": {"$lte": 5}}, {"_id": 0}))
-    """
-    Get candies by price range.
-    """
+# get candies in a specific category
+@app.get("/candies/{category}")
+def list_candies_in_category(category: str):
+    return list(collection.find({"category": category}, {"_id": 0}))
 
 
-@app.get("/store-info")
-def store_information():
-    """
-    Basic information about the candy store, including contact details.
-    """
+# get candies with a key word in the description
+@app.get("/candies/search/{keyword}")
+def list_candies_by_keyword(keyword: str):
+    return list(
+        collection.find(
+            {"description": {"$regex": keyword, "$options": "i"}}, {"_id": 0}
+        )
+    )
 
 
-"""
-This main block gets run when you invoke this file. How do you invoke this file?
+# get candies with a key word in the name
+@app.get("/candies/name/{keyword}")
+def list_candies_by_name(keyword: str):
+    return list(
+        collection.find({"name": {"$regex": keyword, "$options": "i"}}, {"_id": 0})
+    )
 
-        python api.py 
 
-After it is running, copy paste this into a browser: http://127.0.0.1:8080 
+# get candies by price range
+@app.get("/candies/price/{min_price}/{max_price}")
+def list_candies_by_price(min_price: float, max_price: float):
+    return list(
+        collection.find({"price": {"$gte": min_price, "$lte": max_price}}, {"_id": 0})
+    )
 
-You should see your api's base route!
 
-Note:
-    Notice the first param below: api:app 
-    The left side (api) is the name of this file (api.py without the extension)
-    The right side (app) is the bearingiable name of the FastApi instance declared at the top of the file.
-"""
+# get candy with a specific id
+@app.get("/candies/id/{id}")
+def list_candies_by_id(id: int):
+    return list(collection.find({"id": id}, {"_id": 0}))
+
+
+# get a candy image
+@app.get("/candies/image/{id}")
+def get_candy_image(id: int):
+    candy = collection.find_one({"id": id}, {"_id": 0})
+    if candy:
+        return FileResponse(candy["image"])
+    else:
+        raise HTTPException(status_code=404, detail="Candy not found")
+
+
+# update a candy price
+@app.put("/candies/price/{id}/{price}")
+def update_candy_price(id: int, price: float):
+    candy = collection.find_one({"id": id}, {"_id": 0})
+    if candy:
+        collection.update_one({"id": id}, {"$set": {"price": price}})
+        return {"message": "Candy price updated"}
+    else:
+        raise HTTPException(status_code=404, detail="Candy not found")
+
+
+# delete a candy
+@app.delete("/candies/{id}")
+def delete_candy(id: int):
+    candy = collection.find_one({"id": id}, {"_id": 0})
+    if candy:
+        collection.delete_one({"id": id})
+        return {"message": "Candy deleted"}
+    else:
+        raise HTTPException(status_code=404, detail="Candy not found")
+
+
+# update all fields of a candy
+@app.put("/candies/{id}")
+def update_candy(
+    id: int, name: str, category: str, price: float, description: str, image: str
+):
+    candy = collection.find_one({"id": id}, {"_id": 0})
+    if candy:
+        collection.update_one(
+            {"id": id},
+            {
+                "$set": {
+                    "name": name,
+                    "category": category,
+                    "price": price,
+                    "description": description,
+                    "image": image,
+                }
+            },
+        )
+        return {"message": "Candy updated"}
+    else:
+        raise HTTPException(status_code=404, detail="Candy not found")
+
+
 if __name__ == "__main__":
     uvicorn.run(
-        "api:app", host="mater.systems", port=8080, log_level="debug", reload=True
+        "api:app", host="mater.systems", port=8084, log_level="debug", reload=True
     )
