@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import RedirectResponse, FileResponse
+# Libraries for FastAPI
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 import uvicorn
-from pymongo import MongoClient
+from mongoManager import MongoManager
 
 # Builtin libraries
 
@@ -42,7 +43,6 @@ escape into the world of confectionery wonders! And don't worry! We will watch y
 - **Website:** www.kidsinvans.fun
 
 """
-
 # Needed for CORS
 # origins = ["*"]
 
@@ -88,6 +88,7 @@ maybe you create your own country file, which would be great. But try to impleme
 organizes your ability to access a countries polygon data.
 """
 
+mm = MongoManager(db="candy_store")
 
 """
   _      ____   _____          _        __  __ ______ _______ _    _  ____  _____   _____
@@ -100,9 +101,7 @@ organizes your ability to access a countries polygon data.
 This is where methods you write to help with any routes written below should go. Unless you have 
 a module written that you include with statements above.  
 """
-client = MongoClient("mongodb://localhost:27017/")
-db = client["candy_store"]
-collection = db["candies"]
+
 
 """
   _____   ____  _    _ _______ ______  _____
@@ -125,110 +124,133 @@ async def docs_redirect():
 
 @app.get("/candies")
 def list_all_candies():
-    return list(collection.find({}, {"_id": 0}))
+    """
+    Retrieve a list of all candies available in the store.
+    """
+    mm.setCollection("candies")
+    result = mm.get(filter={"_id": 0})
+    return result
 
 
-# get list of candy categories
-@app.get("/candies/categories")
-def list_all_candy_categories():
-    return list(collection.distinct("category"))
+@app.get("/categories")
+def list_all_categories():
+    """
+    Retrieve a list of all candy categories available in the store.
+    """
+    mm.setCollection("categories")
+    results = mm.get(filter={"_id": 0})
+    return results
 
 
-# get candies in a specific category
-@app.get("/candies/{category}")
-def list_candies_in_category(category: str):
-    return list(collection.find({"category": category}, {"_id": 0}))
-
-
-# get candies with a key word in the description
-@app.get("/candies/search/{keyword}")
-def list_candies_by_keyword(keyword: str):
-    return list(
-        collection.find(
-            {"description": {"$regex": keyword, "$options": "i"}}, {"_id": 0}
-        )
+@app.get("/candies/category/{category}")
+def candies_by_category(category: str):
+    """
+    Search for candies based on a query string (e.g., name, category, flavor).
+    """
+    mm.setCollection("candies")
+    result = mm.get(
+        query={"category": category},
+        filter={"_id": 0, "name": 1, "price": 1, "category": 1},
     )
+    return result
 
 
-# get candies with a key word in the name
-@app.get("/candies/name/{keyword}")
-def list_candies_by_name(keyword: str):
-    return list(
-        collection.find({"name": {"$regex": keyword, "$options": "i"}}, {"_id": 0})
+@app.get("/candies/desc/{desc}")
+def candies_by_description(desc: str):
+    """
+    Search for candies based on a description keyword string (e.g., name, category, flavor).
+    """
+    mm.setCollection("candies")
+    regex_query = {"desc": {"$regex": desc, "$options": "i"}}
+    results = mm.get(
+        query=regex_query,
+        sort_criteria=[("name", 1)],
     )
+    return results
 
 
-# get candies by price range
-@app.get("/candies/price/{min_price}/{max_price}")
-def list_candies_by_price(min_price: float, max_price: float):
-    return list(
-        collection.find({"price": {"$gte": min_price, "$lte": max_price}}, {"_id": 0})
+@app.get("/candies/name/{name}")
+def candies_by_name(name: str):
+    """
+    Search for candies based on a name keyword string (e.g., name, category, flavor).
+    """
+    mm.setCollection("candies")
+    regex_query = {"name": {"$regex": name, "$options": "i"}}
+    results = mm.get(
+        query=regex_query,
+        sort_criteria=[("name", 1)],
     )
+    return results
 
 
-# get candy with a specific id
 @app.get("/candies/id/{id}")
-def list_candies_by_id(id: int):
-    return list(collection.find({"id": id}, {"_id": 0}))
+def get_candy_by_id(id: str):
+    """
+    Get detailed information about a specific candy.
+    """
+    mm.setCollection("candies")
+    result = mm.get(
+        query={"id": id}, filter={"_id": 0, "name": 1, "price": 1, "category": 1}
+    )
+    return result
 
 
-# get a candy image
-@app.get("/candies/image/{id}")
-def get_candy_image(id: int):
-    candy = collection.find_one({"id": id}, {"_id": 0})
-    if candy:
-        return FileResponse(candy["image"])
-    else:
-        raise HTTPException(status_code=404, detail="Candy not found")
+@app.get("/candies/price/{price1}-{price2}")
+def get_candy_by_price_range(price1: float, price2: float):
+    """
+    Get candies within a specified price range.
+    """
+    price_range_query = {"price": {"$gte": price1, "$lte": price2}}
+    mm.setCollection("candies")
+    rangeQuery = mm.get(
+        query=price_range_query,
+        filter={"_id": 0, "price": 1, "category_id": 1, "name": 1},
+        sort_criteria={"price": -1},
+    )
+    return rangeQuery
 
 
-# update a candy price
-@app.put("/candies/price/{id}/{price}")
-def update_candy_price(id: int, price: float):
-    candy = collection.find_one({"id": id}, {"_id": 0})
-    if candy:
-        collection.update_one({"id": id}, {"$set": {"price": price}})
-        return {"message": "Candy price updated"}
-    else:
-        raise HTTPException(status_code=404, detail="Candy not found")
+@app.post("/candies")
+def add_new_candy(document):
+    """
+    Add a new candy to the store's inventory.
+    """
+    mm.setCollection("candies")
+    result = mm.post(document)
+    return result
 
 
-# delete a candy
-@app.delete("/candies/{id}")
-def delete_candy(id: int):
-    candy = collection.find_one({"id": id}, {"_id": 0})
-    if candy:
-        collection.delete_one({"id": id})
-        return {"message": "Candy deleted"}
-    else:
-        raise HTTPException(status_code=404, detail="Candy not found")
+@app.put("/candies/{candy_id}/{update_type}/{update_data}")
+def update_candy_info(candy_id: int, update_type: str, update_data: str):
+    """
+    Update information about an existing candy.
+    """
+    mm.setCollection("candies")
+    result = mm.put2("_id", candy_id, update_type, update_data)
+    return result
 
 
-# update all fields of a candy
-@app.put("/candies/{id}")
-def update_candy(
-    id: int, name: str, category: str, price: float, description: str, image: str
-):
-    candy = collection.find_one({"id": id}, {"_id": 0})
-    if candy:
-        collection.update_one(
-            {"id": id},
-            {
-                "$set": {
-                    "name": name,
-                    "category": category,
-                    "price": price,
-                    "description": description,
-                    "image": image,
-                }
-            },
-        )
-        return {"message": "Candy updated"}
-    else:
-        raise HTTPException(status_code=404, detail="Candy not found")
+@app.delete("/candies/{candy_id}")
+def delete_candy(candy_id: int):
+    """
+    Remove a candy from the store's inventory.
+    """
+    mm.setCollection("candies")
+    result = mm.delete(candy_id)
+    return result
+
+
+@app.get("/categories")
+def list_categories():
+    """
+    Get a list of candy categories (e.g., chocolates, gummies, hard candies).
+    """
+    mm.setCollection("categories")
+    result = mm.get(filter={"_id": 0})
+    return result
 
 
 if __name__ == "__main__":
     uvicorn.run(
-        "api:app", host="mater.systems", port=8084, log_level="debug", reload=True
+        app="api:app", host="mater.systems", port=8084, log_level="debug", reload=True
     )
