@@ -3,3 +3,4 @@ rich
 uvicorn
 fastapi
 bson
+requests
