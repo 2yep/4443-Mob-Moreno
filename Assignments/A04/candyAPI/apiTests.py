@@ -1,7 +1,7 @@
 import requests
 
 # Base URL of your FastAPI application
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://mater.systems:8084"
 
 
 def test_get_candies():
