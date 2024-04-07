@@ -23,7 +23,7 @@ description = """🤡
 (This description is totally satirical and does not represent the views of any real person alive or deceased. 
 And even though the topic is totally macabre, I would love to make anyone who abuses children very much deceased.
 However, the shock factor of my stupid candy store keeps you listening to my lectures. If anyone is truly offended
-please publicly or privately message me and I will take it down immediately.)🤡
+please publicly or privately message me and I will take it down idbediately.)🤡
 
 
 ## Description:
@@ -88,8 +88,6 @@ maybe you create your own country file, which would be great. But try to impleme
 organizes your ability to access a countries polygon data.
 """
 
-mm = MongoManager(db="candy_store")
-
 """
   _      ____   _____          _        __  __ ______ _______ _    _  ____  _____   _____
  | |    / __ \ / ____|   /\   | |      |  \/  |  ____|__   __| |  | |/ __ \|  __ \ / ____|
@@ -115,6 +113,8 @@ a module written that you include with statements above.
  delete, and update data. How you make that happen is up to you.
 """
 
+db = MongoManager(db="candy_store")
+
 
 @app.get("/")
 async def docs_redirect():
@@ -127,8 +127,8 @@ def list_all_candies():
     """
     Retrieve a list of all candies available in the store.
     """
-    mm.setCollection("candies")
-    result = mm.get(filter={"_id": 0})
+    db.setCollection("candies")
+    result = db.get(filter={"_id": 0})
     return result
 
 
@@ -137,8 +137,8 @@ def list_all_categories():
     """
     Retrieve a list of all candy categories available in the store.
     """
-    mm.setCollection("categories")
-    results = mm.get(filter={"_id": 0})
+    db.setCollection("categories")
+    results = db.get(filter={"_id": 0})
     return results
 
 
@@ -147,8 +147,8 @@ def candies_by_category(category: str):
     """
     Search for candies based on a query string (e.g., name, category, flavor).
     """
-    mm.setCollection("candies")
-    result = mm.get(
+    db.setCollection("candies")
+    result = db.get(
         query={"category": category},
         filter={"_id": 0, "name": 1, "price": 1, "category": 1},
     )
@@ -160,9 +160,9 @@ def candies_by_description(desc: str):
     """
     Search for candies based on a description keyword string (e.g., name, category, flavor).
     """
-    mm.setCollection("candies")
+    db.setCollection("candies")
     regex_query = {"desc": {"$regex": desc, "$options": "i"}}
-    results = mm.get(
+    results = db.get(
         query=regex_query,
         sort_criteria=[("name", 1)],
     )
@@ -174,9 +174,9 @@ def candies_by_name(name: str):
     """
     Search for candies based on a name keyword string (e.g., name, category, flavor).
     """
-    mm.setCollection("candies")
+    db.setCollection("candies")
     regex_query = {"name": {"$regex": name, "$options": "i"}}
-    results = mm.get(
+    results = db.get(
         query=regex_query,
         sort_criteria=[("name", 1)],
     )
@@ -188,8 +188,8 @@ def get_candy_by_id(id: str):
     """
     Get detailed information about a specific candy.
     """
-    mm.setCollection("candies")
-    result = mm.get(
+    db.setCollection("candies")
+    result = db.get(
         query={"id": id}, filter={"_id": 0, "name": 1, "price": 1, "category": 1}
     )
     return result
@@ -201,8 +201,8 @@ def get_candy_by_price_range(price1: float, price2: float):
     Get candies within a specified price range.
     """
     price_range_query = {"price": {"$gte": price1, "$lte": price2}}
-    mm.setCollection("candies")
-    rangeQuery = mm.get(
+    db.setCollection("candies")
+    rangeQuery = db.get(
         query=price_range_query,
         filter={"_id": 0, "price": 1, "category_id": 1, "name": 1},
         sort_criteria={"price": -1},
@@ -215,8 +215,8 @@ def add_new_candy(document):
     """
     Add a new candy to the store's inventory.
     """
-    mm.setCollection("candies")
-    result = mm.post(document)
+    db.setCollection("candies")
+    result = db.post(document)
     return result
 
 
@@ -225,8 +225,8 @@ def update_candy_info(candy_id: int, update_type: str, update_data: str):
     """
     Update information about an existing candy.
     """
-    mm.setCollection("candies")
-    result = mm.put2("_id", candy_id, update_type, update_data)
+    db.setCollection("candies")
+    result = db.put2("_id", candy_id, update_type, update_data)
     return result
 
 
@@ -235,18 +235,18 @@ def delete_candy(candy_id: int):
     """
     Remove a candy from the store's inventory.
     """
-    mm.setCollection("candies")
-    result = mm.delete(candy_id)
+    db.setCollection("candies")
+    result = db.delete(candy_id)
     return result
 
 
 @app.get("/categories")
 def list_categories():
     """
-    Get a list of candy categories (e.g., chocolates, gummies, hard candies).
+    Get a list of candy categories (e.g., chocolates, gudbies, hard candies).
     """
-    mm.setCollection("categories")
-    result = mm.get(filter={"_id": 0})
+    db.setCollection("categories")
+    result = db.get(filter={"_id": 0})
     return result
 
 
