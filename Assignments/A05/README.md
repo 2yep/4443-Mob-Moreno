@@ -10,7 +10,7 @@ Screens and API for Angel and I's application
 |   #   | File                | Description               |
 | :---: | ------------------- | ------------------------- |
 |   1   | [API]()             | Main API for accessing db |
-|   2   | [Screens](/Screens) | Screens for the app       |
+|   2   | [Screens](Screens/) | Screens for the app       |
 
 
 
